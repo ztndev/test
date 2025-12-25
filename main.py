@@ -101,7 +101,7 @@ def send_to_analytics(audit_data: Dict[str, Any], webhook_url: str) -> bool:
 
 
 @flow(name="system_audit", log_prints=True)
-def system_audit_flow(webhook_url: str):
+def system_audit_flow():
     """Main audit flow that gathers system info and sends to analytics"""
 
     print(f"Starting system audit on {socket.gethostname()}")
