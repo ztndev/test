@@ -832,12 +832,12 @@ def safe_file_write(path: Path, mode: str = "w", encoding: str = "utf-8"):
 # ============================================================================
 
 
-@task(
-    name="execute_command",
-    retries=0,  # Don't retry at task level; handle in function
-    cache_key_fn=task_input_hash,
-    log_prints=True,
-)
+# @task(
+#     name="execute_command",
+#     retries=0,  # Don't retry at task level; handle in function
+#     cache_key_fn=task_input_hash,
+#     log_prints=True,
+# )
 def execute_command(
     command: Sequence[str],
     timeout: int = DEFAULT_COMMAND_TIMEOUT,
