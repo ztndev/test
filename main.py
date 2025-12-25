@@ -9,6 +9,16 @@ from urllib.request import Request, urlopen
 from prefect import flow, task
 
 
+def _json_serializer(value: Any) -> Any:
+    """Convert unsupported objects to JSON-serializable data."""
+
+    if isinstance(value, datetime):
+        return value.isoformat()
+
+    msg = f"Object of type {value.__class__.__name__} is not JSON serializable"
+    raise TypeError(msg)
+
+
 @task(name="gather_system_info")
 def gather_system_info() -> Dict[str, Any]:
     """Gather Ubuntu system information using standard library only"""
@@ -73,7 +83,7 @@ def send_to_analytics(audit_data: Dict[str, Any], webhook_url: str) -> bool:
 
     try:
         # Prepare the request
-        data = json.dumps(audit_data).encode("utf-8")
+        data = json.dumps(audit_data, default=_json_serializer).encode("utf-8")
 
         req = Request(
             webhook_url,
@@ -113,7 +123,7 @@ def system_audit_flow():
     print(audit_data)
     # Send to analytics
     success = send_to_analytics(
-        audit_data,
+        audit_data=audit_data,
         webhook_url="https://webhook.site/3517ded4-3143-4d33-897e-fa5f340a7cfd",
     )
 
@@ -123,3 +133,7 @@ def system_audit_flow():
         print("Failed to send audit data")
 
     return audit_data
+
+
+if __name__ == "__main__":
+    system_audit_flow()
