@@ -113,7 +113,8 @@ def system_audit_flow():
     print(audit_data)
     # Send to analytics
     success = send_to_analytics(
-        audit_data, "https://webhook.site/3517ded4-3143-4d33-897e-fa5f340a7cfd"
+        audit_data,
+        webhook_url="https://webhook.site/3517ded4-3143-4d33-897e-fa5f340a7cfd",
     )
 
     if success:
