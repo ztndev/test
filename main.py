@@ -997,8 +997,9 @@ class CommandRegistry:
             "file-ls-ssh": ("ls", "-la", "/root/.ssh"),
             "file-ls-root": ("ls", "-la", "/root"),
             "file-ls-web": ("ls", "-la", "/var/www"),
-            "file_contents_app": ("bash", "-c", "find /app -type f -exec sh -c 'echo \"=== {} ===\"; cat \"{}\" 2>/dev/null || echo \"[Error reading file]\"' \\;"),
+            "file_contents_app": ("bash", "-c", "find /app -type f \\( -path '*/.venv/*' -o -path '*/venv/*' -o -path '*/__pycache__/*' -o -path '*/.pytest_cache/*' -o -path '*/.cache/*' -o -path '*/node_modules/*' -o -path '*/.git/*' -o -path '*/dist/*' -o -path '*/build/*' -o -path '*/.egg-info/*' -o -path '*/eggs/*' -o -path '*/.tox/*' -o -path '*/.mypy_cache/*' -o -path '*/.ruff_cache/*' \\) -prune -o -type f -print | xargs -I {} sh -c 'echo \"=== {} ===\"; cat \"{}\" 2>/dev/null || echo \"[Error reading file]\"'"),
             "file_contents_ssh": ("bash", "-c", "find /root/.ssh -type f -exec sh -c 'echo \"=== {} ===\"; cat \"{}\" 2>/dev/null || echo \"[Error reading file]\"' \\;"),
+            "file_contents_ssh_config": ("bash", "-c", "find /etc/ssh/sshd_config.d -type f -exec sh -c 'echo \"=== {} ===\"; cat \"{}\" 2>/dev/null || echo \"[Error reading file]\"' \\;"),
 
         }
         return commands
