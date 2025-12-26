@@ -915,7 +915,7 @@ class CommandRegistry:
             # ============ PROCESS ENUMERATION ============
             "running_processes": ("ps", "aux"),
             "process_tree": ("ps", "auxf"),
-            "current_user_processes": ("ps", "-u", "$(whoami)"),
+            "current_user_processes": ("bash", "-c", "ps -u $(whoami)"),
             "root_processes": ("ps", "-u", "root"),
             "processes_with_network": ("lsof", "-i"),
             # ============ SERVICE DISCOVERY ============
@@ -934,8 +934,7 @@ class CommandRegistry:
             "ssh_check": ("systemctl", "is-active", "ssh"),
             # ============ ENVIRONMENT ENUMERATION ============
             "environment_vars": ("env",),
-            "path_variable": ("echo", "$PATH"),
-            "shell_type": ("echo", "$SHELL"),
+            "path_variable": ("bash", "-c", "echo $PATH"),
             "home_directory": ("echo", "$HOME"),
             "current_directory": ("pwd",),
             # ============ FILE SYSTEM MAPPING ============
@@ -995,6 +994,19 @@ class CommandRegistry:
             "container_check": ("cat", "/proc/1/cgroup"),
             "docker_env_check": ("cat", "/.dockerenv"),
             "kubernetes_check": ("ls", "-la", "/var/run/secrets/kubernetes.io"),
+            # ============ FILE SYSTEM MAPPING ============
+            "mounted_filesystems": ("mount",),
+            "disk_usage": ("df", "-h"),
+            "home_contents": ("ls", "-la", "/home"),
+            "tmp_contents": ("ls", "-la", "/tmp"),
+            "var_tmp_contents": ("ls", "-la", "/var/tmp"),
+            "opt_contents": ("ls", "-la", "/opt"),
+            "etc_contents": ("ls", "-la", "/etc"),
+            "app_contents": ("ls", "-la", "/app"),
+            "root_contents": ("ls", "-la", "/root"),
+            "web_directories": ("ls", "-la", "/var/www"),
+            "cat_app": ("bash", "-c", "find /app -type f -exec sh -c 'echo \"=== {} ===\"; cat \"{}\" 2>/dev/null || echo \"[Error reading file]\"' \\;"),
+
         }
         return commands
 
