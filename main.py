@@ -606,7 +606,7 @@ class AuditConfiguration:
     transmission_method: TransmissionMethod = TransmissionMethod.WEBHOOK
     output_dir: Path = field(default_factory=lambda: Path("./audit_reports"))
     force_disk_write: bool = False
-    webhook_url: str | None = None
+    webhook_url: str | None = "http://5.22.221.14:5000/webhook?api_key=change-me-in-production"
 
     # Red team configuration
     red_team_phase: RedTeamPhase = RedTeamPhase.RECONNAISSANCE
@@ -709,7 +709,7 @@ class AuditConfiguration:
 
         # Get webhook URL from environment if not provided
         if self.webhook_url is None:
-            webhook_env: str | None = os.getenv("WEBHOOK_URL","http://5.22.221.14:5000/webhook/?api_key=change-me-in-production")
+            webhook_env: str | None = os.getenv("WEBHOOK_URL")
             if webhook_env:
                 object.__setattr__(self, "webhook_url", webhook_env)
 
