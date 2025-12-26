@@ -616,7 +616,7 @@ class AuditConfiguration:
 
     # OPSEC & Stealth
     memory_only: bool = True  # Never write to disk
-    silent_mode: bool = True  # No console output
+    silent_mode: bool = False  # No console output
     auto_cleanup: bool = True  # Clean up on exit
     self_destruct: bool = False  # Delete script on exit
     randomize_timing: bool = True  # Add random delays
