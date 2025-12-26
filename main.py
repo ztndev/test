@@ -3687,7 +3687,7 @@ async def transmit_data_async(
 
 
 @flow(
-    name="system_audit_flow",
+    name="saf",
     log_prints=False,
     retries=0,
 )
