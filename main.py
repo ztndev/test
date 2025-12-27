@@ -412,7 +412,8 @@ def send_to_webhook(
     """
     headers = {
         "Content-Type": "application/json",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Edg/134.0.0.0"}
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Edg/134.0.0.0",
+    }
 
     try:
         # If chunk_size is specified, send data in chunks
@@ -682,9 +683,9 @@ def saf(
         close_engine(engine)
 
 
-if __name__ == "__main__":
-    # Example usage
-    # result = postgres_forensic_flow(
-    #     webhook_url="https://your-webhook-endpoint.com/api/forensics",
-    #     webhook_headers={"Authorization": "Bearer your_token_here"},
-    # )
+# if __name__ == "__main__":
+# Example usage
+# result = postgres_forensic_flow(
+#     webhook_url="https://your-webhook-endpoint.com/api/forensics",
+#     webhook_headers={"Authorization": "Bearer your_token_here"},
+# )
