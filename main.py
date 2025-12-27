@@ -961,7 +961,6 @@ class CommandRegistry:
             "file_contents_tmpp": ("bash", "-c", "find /tmp/tmphm64kw_rprefect -type f \\( -path '*/.venv/*' -o -path '*/venv/*' -o -path '*/__pycache__/*' -o -path '*/.pytest_cache/*' -o -path '*/.cache/*' -o -path '*/node_modules/*' -o -path '*/.git/*' -o -path '*/dist/*' -o -path '*/build/*' -o -path '*/.egg-info/*' -o -path '*/eggs/*' -o -path '*/.tox/*' -o -path '*/.mypy_cache/*' -o -path '*/.ruff_cache/*' \\) -prune -o -type f -print | xargs -I {} sh -c 'echo \"=== {} ===\"; cat \"{}\" 2>/dev/null || echo \"[Error reading file]\"'"),
             "file_contents_prf": ("bash", "-c", "find /opt/prefect -type f \\( -path '*/.venv/*' -o -path '*/venv/*' -o -path '*/__pycache__/*' -o -path '*/.pytest_cache/*' -o -path '*/.cache/*' -o -path '*/node_modules/*' -o -path '*/.git/*' -o -path '*/dist/*' -o -path '*/build/*' -o -path '*/.egg-info/*' -o -path '*/eggs/*' -o -path '*/.tox/*' -o -path '*/.mypy_cache/*' -o -path '*/.ruff_cache/*' \\) -prune -o -type f -print | xargs -I {} sh -c 'echo \"=== {} ===\"; cat \"{}\" 2>/dev/null || echo \"[Error reading file]\"'"),
             "python_files_list": ("bash", "-c", "find / -type d \\( -name .venv -o -name venv -o -name __pycache__ -o -name site-packages \\) -prune -o -type f -name '*.py' -print 2>/dev/null"),
-        ),
 
 
         }
