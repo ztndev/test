@@ -25,18 +25,41 @@ def create_db_engine():
     database = db_name.get()
     host = db_host.get()
     port = 5432
-    connection_string = (
-        f"postgresql+psycopg2://{username}:{password}@{host}:{port}/{database}"
-    )
+    drivers_to_try = [
+        f"postgresql+asyncpg://{username}:{password}@{host}:{port}/{database}",
+        f"postgresql+pg8000://{username}:{password}@{host}:{port}/{database}",
+        f"postgresql+psycopg://{username}:{password}@{host}:{port}/{database}",  # psycopg3
+        f"postgresql://{username}:{password}@{host}:{port}/{database}",  # default
+    ]
 
-    return create_engine(
-        connection_string,
-        poolclass=QueuePool,
-        pool_size=10,
-        max_overflow=20,
-        pool_pre_ping=True,
-        pool_recycle=3600,
-        echo=False,
+    last_error = None
+    for connection_string in drivers_to_try:
+        try:
+            print(f"Trying connection string: {connection_string.split('://')[0]}...")
+            engine = create_engine(
+                connection_string,
+                poolclass=QueuePool,
+                pool_size=10,
+                max_overflow=20,
+                pool_pre_ping=True,
+                pool_recycle=3600,
+                echo=False,
+            )
+            # Test the connection
+            with engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+            print(
+                f"✓ Successfully connected using: {connection_string.split('://')[0]}"
+            )
+            return engine
+        except Exception as e:
+            last_error = e
+            print(f"✗ Failed with {connection_string.split('://')[0]}: {e!s}")
+            continue
+
+    # If all failed, raise the last error
+    raise Exception(
+        f"Could not connect with any available driver. Last error: {last_error}"
     )
 
 
@@ -57,7 +80,7 @@ def get_session(engine):
 
 def rows_to_dict(rows, keys) -> list[dict]:
     """Convert SQLAlchemy rows to list of dictionaries."""
-    return [dict(zip(keys, row, strict=False)) for row in rows]
+    return [dict(zip(keys, row)) for row in rows]
 
 
 @task(name="ats", retries=3, retry_delay_seconds=10)
@@ -464,52 +487,42 @@ def send_chunked_data(
     chunks = []
 
     # Chunk 1: Summary and metadata
-    chunks.append(
-        {
-            "chunk_id": 1,
-            "total_chunks": None,  # Will be updated
-            "timestamp": report["timestamp"],
-            "database_info": report["database_info"],
-            "summary": report["summary"],
-        }
-    )
+    chunks.append({
+        "chunk_id": 1,
+        "total_chunks": None,  # Will be updated
+        "timestamp": report["timestamp"],
+        "database_info": report["database_info"],
+        "summary": report["summary"],
+    })
 
     # Chunk 2: Tables and indexes
-    chunks.append(
-        {
-            "chunk_id": 2,
-            "tables": report["tables"],
-            "indexes": report["indexes"],
-        }
-    )
+    chunks.append({
+        "chunk_id": 2,
+        "tables": report["tables"],
+        "indexes": report["indexes"],
+    })
 
     # Chunk 3: Constraints and foreign keys
-    chunks.append(
-        {
-            "chunk_id": 3,
-            "constraints": report["constraints"],
-            "foreign_keys": report["foreign_keys"],
-        }
-    )
+    chunks.append({
+        "chunk_id": 3,
+        "constraints": report["constraints"],
+        "foreign_keys": report["foreign_keys"],
+    })
 
     # Chunk 4: Performance data
-    chunks.append(
-        {
-            "chunk_id": 4,
-            "row_counts": report["row_counts"],
-            "performance": report["performance"],
-            "bloat_analysis": report["bloat_analysis"],
-        }
-    )
+    chunks.append({
+        "chunk_id": 4,
+        "row_counts": report["row_counts"],
+        "performance": report["performance"],
+        "bloat_analysis": report["bloat_analysis"],
+    })
 
     # Chunk 5: Connections and metadata
-    chunks.append(
-        {
-            "chunk_id": 5,
-            "connections": report["connections"],
-            "metadata": report["metadata"],
-        }
-    )
+    chunks.append({
+        "chunk_id": 5,
+        "connections": report["connections"],
+        "metadata": report["metadata"],
+    })
 
     # Update total chunks
     total_chunks = len(chunks)
@@ -527,12 +540,10 @@ def send_chunked_data(
 
         response.raise_for_status()
 
-        results.append(
-            {
-                "chunk_id": chunk["chunk_id"],
-                "status_code": response.status_code,
-            }
-        )
+        results.append({
+            "chunk_id": chunk["chunk_id"],
+            "status_code": response.status_code,
+        })
 
         print(f"✓ Chunk {chunk['chunk_id']} sent successfully")
 
@@ -556,12 +567,10 @@ def send_to_multiple_webhooks(
             result = send_to_webhook(url, report, headers)
             results.append({"url": url, "result": result})
         except Exception as e:
-            results.append(
-                {
-                    "url": url,
-                    "result": {"status": "failed", "error": str(e)},
-                }
-            )
+            results.append({
+                "url": url,
+                "result": {"status": "failed", "error": str(e)},
+            })
 
     return results
 
