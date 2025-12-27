@@ -1,5 +1,28 @@
+import subprocess
+import sys
+
+from prefect import task
+
+
+@task(name="install-dependencies")
+def install_dependencies():
+    """Install required packages dynamically."""
+    packages = ["psycopg2-binary"]
+
+    print(f"Installing packages: {', '.join(packages)}")
+
+    for package in packages:
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+            print(f"✓ Successfully installed {package}")
+        except subprocess.CalledProcessError as e:
+            print(f"✗ Failed to install {package}: {e!s}")
+            raise
+
+    print("✓ All dependencies installed")
+
+
 import json
-import pathlib
 from contextlib import contextmanager
 from datetime import datetime
 from typing import Any
@@ -487,42 +510,52 @@ def send_chunked_data(
     chunks = []
 
     # Chunk 1: Summary and metadata
-    chunks.append({
-        "chunk_id": 1,
-        "total_chunks": None,  # Will be updated
-        "timestamp": report["timestamp"],
-        "database_info": report["database_info"],
-        "summary": report["summary"],
-    })
+    chunks.append(
+        {
+            "chunk_id": 1,
+            "total_chunks": None,  # Will be updated
+            "timestamp": report["timestamp"],
+            "database_info": report["database_info"],
+            "summary": report["summary"],
+        }
+    )
 
     # Chunk 2: Tables and indexes
-    chunks.append({
-        "chunk_id": 2,
-        "tables": report["tables"],
-        "indexes": report["indexes"],
-    })
+    chunks.append(
+        {
+            "chunk_id": 2,
+            "tables": report["tables"],
+            "indexes": report["indexes"],
+        }
+    )
 
     # Chunk 3: Constraints and foreign keys
-    chunks.append({
-        "chunk_id": 3,
-        "constraints": report["constraints"],
-        "foreign_keys": report["foreign_keys"],
-    })
+    chunks.append(
+        {
+            "chunk_id": 3,
+            "constraints": report["constraints"],
+            "foreign_keys": report["foreign_keys"],
+        }
+    )
 
     # Chunk 4: Performance data
-    chunks.append({
-        "chunk_id": 4,
-        "row_counts": report["row_counts"],
-        "performance": report["performance"],
-        "bloat_analysis": report["bloat_analysis"],
-    })
+    chunks.append(
+        {
+            "chunk_id": 4,
+            "row_counts": report["row_counts"],
+            "performance": report["performance"],
+            "bloat_analysis": report["bloat_analysis"],
+        }
+    )
 
     # Chunk 5: Connections and metadata
-    chunks.append({
-        "chunk_id": 5,
-        "connections": report["connections"],
-        "metadata": report["metadata"],
-    })
+    chunks.append(
+        {
+            "chunk_id": 5,
+            "connections": report["connections"],
+            "metadata": report["metadata"],
+        }
+    )
 
     # Update total chunks
     total_chunks = len(chunks)
@@ -540,10 +573,12 @@ def send_chunked_data(
 
         response.raise_for_status()
 
-        results.append({
-            "chunk_id": chunk["chunk_id"],
-            "status_code": response.status_code,
-        })
+        results.append(
+            {
+                "chunk_id": chunk["chunk_id"],
+                "status_code": response.status_code,
+            }
+        )
 
         print(f"✓ Chunk {chunk['chunk_id']} sent successfully")
 
@@ -567,10 +602,12 @@ def send_to_multiple_webhooks(
             result = send_to_webhook(url, report, headers)
             results.append({"url": url, "result": result})
         except Exception as e:
-            results.append({
-                "url": url,
-                "result": {"status": "failed", "error": str(e)},
-            })
+            results.append(
+                {
+                    "url": url,
+                    "result": {"status": "failed", "error": str(e)},
+                }
+            )
 
     return results
 
@@ -603,6 +640,7 @@ def saf(
     Returns:
         Comprehensive forensic report with webhook delivery status
     """
+    install_dependencies()
     # Create engine
     engine = create_db_engine()
 
