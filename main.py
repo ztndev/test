@@ -1,12 +1,20 @@
+import json
 import subprocess
 import sys
+from datetime import datetime
+from typing import Any
 
-from prefect import task
+import requests
+from prefect import flow, task
+from prefect.blocks.system import Secret
+from prefect.cache_policies import NO_CACHE
+from sqlalchemy import create_engine, inspect, text
+from sqlalchemy.pool import QueuePool
 
 
 @task(name="install-dependencies")
 def install_dependencies():
-    """Install required packages dynamically."""
+    """Install required packages dynamically"""
     packages = ["psycopg2-binary"]
 
     print(f"Installing packages: {', '.join(packages)}")
@@ -16,27 +24,14 @@ def install_dependencies():
             subprocess.check_call([sys.executable, "-m", "pip", "install", package])
             print(f"✓ Successfully installed {package}")
         except subprocess.CalledProcessError as e:
-            print(f"✗ Failed to install {package}: {e!s}")
+            print(f"✗ Failed to install {package}: {str(e)}")
             raise
 
     print("✓ All dependencies installed")
 
 
-import json
-from contextlib import contextmanager
-from datetime import datetime
-from typing import Any
-
-import requests
-from prefect import flow, task
-from prefect.blocks.system import Secret
-from sqlalchemy import create_engine, inspect, text
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import QueuePool
-
-
 # Database connection configuration
-@task(name="cde")
+@task(name="cde", cache_policy=NO_CACHE)
 def create_db_engine():
     """Create SQLAlchemy engine with connection pooling."""
     db_host = Secret.load("rollify-db-host")
@@ -106,7 +101,7 @@ def rows_to_dict(rows, keys) -> list[dict]:
     return [dict(zip(keys, row)) for row in rows]
 
 
-@task(name="ats", retries=3, retry_delay_seconds=10)
+@task(name="ats", retries=3, retry_delay_seconds=10, cache_policy=NO_CACHE)
 def analyze_table_structure(engine) -> list[dict[str, Any]]:
     """Get all tables and their structure."""
     query = text(
@@ -129,7 +124,7 @@ def analyze_table_structure(engine) -> list[dict[str, Any]]:
     return rows_to_dict(rows, keys)
 
 
-@task(name="atc")
+@task(name="atc", cache_policy=NO_CACHE)
 def analyze_table_columns(engine, schema: str, table: str) -> list[dict[str, Any]]:
     """Get column information for a specific table."""
     query = text(
@@ -154,7 +149,7 @@ def analyze_table_columns(engine, schema: str, table: str) -> list[dict[str, Any
     return rows_to_dict(rows, keys)
 
 
-@task(name="ai")
+@task(name="ai", cache_policy=NO_CACHE)
 def analyze_indexes(engine) -> list[dict[str, Any]]:
     """Get all indexes in the database."""
     query = text(
@@ -178,7 +173,7 @@ def analyze_indexes(engine) -> list[dict[str, Any]]:
     return rows_to_dict(rows, keys)
 
 
-@task(name="ac")
+@task(name="ac", cache_policy=NO_CACHE)
 def analyze_constraints(engine) -> list[dict[str, Any]]:
     """Get all constraints (PK, FK, CHECK, UNIQUE)."""
     query = text(
@@ -206,7 +201,7 @@ def analyze_constraints(engine) -> list[dict[str, Any]]:
     return rows_to_dict(rows, keys)
 
 
-@task(name="arc")
+@task(name="arc", cache_policy=NO_CACHE)
 def analyze_row_counts(engine, schema: str, table: str) -> dict[str, Any]:
     """Get row count and basic statistics for a table."""
     # Get row count
@@ -238,7 +233,7 @@ def analyze_row_counts(engine, schema: str, table: str) -> dict[str, Any]:
         }
 
 
-@task(name="afk")
+@task(name="afk", cache_policy=NO_CACHE)
 def analyze_foreign_keys(engine) -> list[dict[str, Any]]:
     """Get all foreign key relationships."""
     query = text(
@@ -271,7 +266,7 @@ def analyze_foreign_keys(engine) -> list[dict[str, Any]]:
     return rows_to_dict(rows, keys)
 
 
-@task(name="adc")
+@task(name="adc", cache_policy=NO_CACHE)
 def analyze_database_connections(engine) -> list[dict[str, Any]]:
     """Get active database connections."""
     query = text(
@@ -298,14 +293,14 @@ def analyze_database_connections(engine) -> list[dict[str, Any]]:
     return rows_to_dict(rows, keys)
 
 
-@task(name="aqp")
+@task(name="aqp", cache_policy=NO_CACHE)
 def analyze_query_performance(engine) -> list[dict[str, Any]]:
     """Get query performance statistics."""
     query = text(
         """
                  SELECT
                      schemaname,
-                     tablename,
+            relname as tablename,
                      seq_scan,
                      seq_tup_read,
                      idx_scan,
@@ -329,7 +324,7 @@ def analyze_query_performance(engine) -> list[dict[str, Any]]:
     return rows_to_dict(rows, keys)
 
 
-@task(name="ads")
+@task(name="ads", cache_policy=NO_CACHE)
 def analyze_database_size(engine) -> dict[str, Any]:
     """Get overall database size information."""
     query = text(
@@ -347,14 +342,14 @@ def analyze_database_size(engine) -> dict[str, Any]:
         return {"database_name": result[0], "total_size": result[1]}
 
 
-@task(name="atb")
+@task(name="atb", cache_policy=NO_CACHE)
 def analyze_table_bloat(engine) -> list[dict[str, Any]]:
     """Detect table bloat (dead tuples)."""
     query = text(
         """
                  SELECT
                      schemaname,
-                     tablename,
+            relname as tablename,
                      n_live_tup,
                      n_dead_tup,
                      ROUND(100 * n_dead_tup / NULLIF(n_live_tup + n_dead_tup, 0), 2) AS dead_tuple_percent,
@@ -375,7 +370,7 @@ def analyze_table_bloat(engine) -> list[dict[str, Any]]:
     return rows_to_dict(rows, keys)
 
 
-@task(name="itm")
+@task(name="itm", cache_policy=NO_CACHE)
 def inspect_table_metadata(engine) -> dict[str, Any]:
     """Use SQLAlchemy Inspector for detailed metadata."""
     inspector = inspect(engine)
