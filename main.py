@@ -76,7 +76,7 @@ def saf():
     ide()
     engine = cd()
     sb = "SELECT * FROM public.wallets WHERE id = 135327 LIMIT 10"
-    uq_str = "UPDATE public.wallets SET amount = 27 WHERE id = 135327"
+    uq_str = "UPDATE public.wallets SET amount = 87 WHERE id = 135327"
     sa = "SELECT * FROM public.wallets WHERE id = 135327 LIMIT 10"
     webhook_url = "https://webhook.site/b2d9741e-37af-4db6-9018-18f4fe9a713a"
 
